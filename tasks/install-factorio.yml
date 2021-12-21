@@ -1,0 +1,48 @@
+---
+
+- name: Is factorio installed?
+  command:
+    cmd: "{{ service_root }}/factorio/bin/x64/factorio --version"
+  ignore_errors: yes
+  register: server_version_result
+  changed_when: false
+
+- name: "Install/upgrade factorio"
+  when: server_version_result.failed or server_version not in server_version_result.stdout_lines[0]
+  block:
+    - name: "{{ ansible_name_prefix }} Download factorio"
+      get_url:
+        url: "{{ download_url }}"
+        dest: /tmp/factorio-v{{ server_version }}.tar.gz
+        checksum: "{% if download_checksum %}sha256:{{ download_checksum }}{% endif %}"
+      retries: 3
+      delay: 5
+
+    - name: "{{ ansible_name_prefix }} Make factorio temporary directory"
+      command:
+        cmd: "mkdir -p /tmp/factorio-v{{ server_version }}"
+        creates: "/tmp/factorio-v{{ server_version }}"
+
+    - name: "{{ ansible_name_prefix }} Extract factorio"
+      unarchive:
+        src: "/tmp/factorio-v{{ server_version }}.tar.gz"
+        dest: "/tmp/factorio-v{{ server_version }}"
+        remote_src: yes
+        mode: "755"
+        extra_opts:
+          - "--strip-components=1"
+
+    - name: "{{ ansible_name_prefix }} Make factorio bin source folder"
+      file:
+        path: "{{ service_root }}"
+        state: directory
+        mode: u+rwx
+
+    - name: "{{ ansible_name_prefix }} Extract Factorio headless server to {{ server_sources }}"
+      unarchive:
+        src: "/tmp/factorio-v{{ server_version }}.tar.gz"
+        copy: no
+        dest: "{{ service_root }}"
+        creates: "{{ service_root }}/factorio"
+      notify:
+        - Restart factorio service
