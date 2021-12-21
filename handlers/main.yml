@@ -11,3 +11,9 @@
     name: "{{ service_name }}"
     state: restarted
   when: service_restart_permitted
+
+- name: Stop factorio service
+  systemd:
+    name: "{{ service_name }}"
+    state: stopped
+  when: service_restart_permitted

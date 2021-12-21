@@ -1,0 +1,32 @@
+---
+# Set the content of mod-list.json
+# The factorio server writes the content of the mod-list.json file
+# and generally changes the formatting, so we cannot therefore
+# reliably detect changes to the mod list. We therefore maintain
+# two copies of this file. One for the server, and one for us
+
+- name: ({{ service_name }}) Check mod-list.json file for changes
+  check_mode: yes
+  copy:
+    content: "{{ factorio_server_mod_list | to_nice_json }}"
+    dest: "{{ service_root }}/factorio/mods/mod-list.original.json"
+  when: factorio_server_mod_list
+  notify:
+    - Stop factorio service
+
+- meta: flush_handlers
+
+- name: ({{ service_name }}) Create mod-list.json file
+  copy:
+    content: "{{ factorio_server_mod_list | to_nice_json }}"
+    dest: "{{ service_root }}/factorio/mods/mod-list.original.json"
+  when: factorio_server_mod_list
+  notify:
+    - Restart factorio service
+
+- name: ({{ service_name }}) Create mod-list.json file for server's consumption
+  copy:
+    content: "{{ factorio_server_mod_list | to_nice_json }}"
+    dest: "{{ service_root }}/factorio/mods/mod-list.json"
+  when: factorio_server_mod_list
+  changed_when: false

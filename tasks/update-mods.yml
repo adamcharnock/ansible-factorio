@@ -1,0 +1,43 @@
+- name: ({{ service_name }}) Install python3
+  package:
+    name:
+      - "python3-pip"
+
+- name: ({{ service_name }}) Install mod updater dependencies
+  pip:
+    executable: pip3
+    name: requests
+
+- name: ({{ service_name }}) Make mod updater directory
+  file:
+    path: "{{ service_root }}/mod-updater"
+    state: "directory"
+
+- name: ({{ service_name }}) Install mod updater
+  unarchive:
+    src: "https://github.com/pdemonaco/factorio-mod-updater/archive/refs/heads/master.tar.gz"
+    remote_src: yes
+    dest: "{{ service_root }}/mod-updater"
+    extra_opts:
+      - "--strip-components=1"
+
+
+- name: ({{ service_name }}) Update mods
+  command:
+    argv:
+      - "{{ service_root }}/mod-updater/mod_updater.py"
+      - "--mod-directory"
+      - "{{ service_root }}/factorio/mods"
+      - "--fact-path"
+      - "{{ service_root }}/factorio/bin/x64/factorio"
+      - "--player-data"
+      - "{{ service_root }}/factorio/player-data.json"
+      - "--server-settings"
+      - "{{ service_root }}/factorio/data/server-settings.json"
+      - "--update"
+  when: factorio_server_settings.username and factorio_server_settings.token
+  register: update_mods_result
+  changed_when: "'Remove' in update_mods_result.stdout or 'Download' in update_mods_result.stdout"
+  notify: Restart factorio service
+
+

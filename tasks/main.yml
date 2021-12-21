@@ -34,6 +34,12 @@
 - name: "{{ ansible_name_prefix }} Set map settings"
   include: set-map-settings.yml
 
+- name: "{{ ansible_name_prefix }} Set mod list"
+  include: set-mod-list.yml
+
+- name: "{{ ansible_name_prefix }} Update mods"
+  include: update-mods.yml
+
 # Create the save if one doesn't already exist
 - name: "{{ ansible_name_prefix }} Create default save file"
   command: "{{ service_root }}/factorio/bin/x64/factorio --create {{ factorio_target_save }}"
